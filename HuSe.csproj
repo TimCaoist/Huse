@@ -39,11 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Downloader\BaseDownloaderHanlder.cs" />
+    <Compile Include="Downloader\DownloadHanlderFactory.cs" />
+    <Compile Include="Downloader\MutilDownLoadHanlder.cs" />
+    <Compile Include="Downloader\SingleDownLoaderHandler.cs" />
     <Compile Include="Interface\IHuSeConfig.cs" />
     <Compile Include="Interface\IProcessNotify.cs" />
     <Compile Include="Models\DefaultHuSeConfig.cs" />
     <Compile Include="Models\MetaData.cs" />
-    <Compile Include="WebClientEx.cs" />
     <Compile Include="WebClientUtil.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

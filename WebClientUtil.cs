@@ -1,16 +1,17 @@
-﻿using HuSe.Interface;
+﻿using HuSe.Downloader;
+using HuSe.Interface;
 using HuSe.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace HuSe
 {
     public static class WebClientUtil
     {
-        private static readonly ICollection<WebClientEx> Proccers = new List<WebClientEx>();
+        private static readonly ICollection<BaseDownloaderHanlder> Proccers = new List<BaseDownloaderHanlder>();
 
         private static readonly List<MetaData> datas = new List<MetaData>();
 
@@ -20,7 +21,6 @@ namespace HuSe
 
         private static Thread CustomerThread = new Thread(Cusomer);
 
-        private static volatile bool IsIdle = false;
 
         static WebClientUtil()
         {
@@ -32,20 +32,9 @@ namespace HuSe
         {
             while (true)
             {
-                if (Config.MaxProccer <= Proccers.Count)
+                if (Proccers.Count() < Config.MaxProccer)
                 {
-                    var clientEx = Proccers.FirstOrDefault(p => p.IsBusy == false);
-                    if (clientEx == null)
-                    {
-                        continue;
-                    }
-                    
-                    WebClientIdle(clientEx);
-                }
-                else {
-                    var webClient = NewClient();
-                    Proccers.Add(webClient);
-                    WebClientIdle(webClient);
+                    WebClientIdle();
                 }
                 
                 autoResetEvent.WaitOne();
@@ -65,6 +54,10 @@ namespace HuSe
             }
 
             Config = config;
+            if (!Directory.Exists(Config.LocalFolder))
+            {
+                Directory.CreateDirectory(Config.LocalFolder);
+            }
         }
 
         public static void DownloadFile(string url, string localName, long batchId, IProcessNotify processNotify = null, bool existReplace = false)
@@ -81,20 +74,10 @@ namespace HuSe
 
         public static void DownloadFile(MetaData metaData, IProcessNotify processNotify = null, bool existReplace = false)
         {
-            IsIdle = false;
             metaData.ProcessNotify = processNotify;
             metaData.ReplaceExist = existReplace;
             datas.Add(metaData);
             autoResetEvent.Set();
-        }
-
-        private static WebClientEx NewClient()
-        {
-            var webClient = new WebClientEx
-            {
-                Idle = Notify
-            };
-            return webClient;
         }
 
         private static void Notify()
@@ -102,53 +85,35 @@ namespace HuSe
             autoResetEvent.Set();
         }
 
-        private static void Clear()
-        {
-            if (IsIdle == true)
-            {
-                return;
-            }
-
-            IsIdle = true;
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(Config.IdleMaxClearTime * 1000);
-                if (IsIdle == false)
-                {
-                    return;
-                }
-
-                var c = Proccers.Count();
-                for (var i = c - 1; i >= 0; i--)
-                {
-                    var p = Proccers.ElementAt(i);
-                    p.Idle -= Notify;
-                    p.Dispose();
-                    Proccers.Remove(p);
-                }
-            });
-        }
-
-        private static void WebClientIdle(WebClientEx clientEx)
+        private static void WebClientIdle()
         {
             MetaData meta = datas.FirstOrDefault();
             if (meta == null)
             {
-                Clear();
                 return;
             }
-            
+
+            MetaData[] batchDatas;
             if (meta.BatchId == 0)
             {
+                batchDatas = new MetaData[] { meta };
                 datas.Remove(meta);
-                clientEx.Down(meta, meta.ProcessNotify, Config.LocalFolder);
             }
             else {
                 var c = datas.Count();
-                IEnumerable<MetaData> batchDatas = datas.Where(d => d.BatchId == meta.BatchId).ToArray();
+                batchDatas = datas.Where(d => d.BatchId == meta.BatchId).ToArray();
                 datas.RemoveAll(d => d.BatchId == meta.BatchId);
-                clientEx.Down(batchDatas, meta.ProcessNotify, Config.LocalFolder);
             }
+
+            var baseHanlder = DownloadHanlderFactory.Create(meta.BatchId, batchDatas);
+            Proccers.Add(baseHanlder);
+            baseHanlder.Finshed = (hanlder) =>
+            {
+                Proccers.Remove(hanlder);
+                autoResetEvent.Set();
+            };
+
+            baseHanlder.StartDown(meta.ProcessNotify, Config.LocalFolder);
         }
 
         public static void DownloadFile(string url, long id, IProcessNotify processNotify)
@@ -174,7 +139,6 @@ namespace HuSe
 
         public static void DownloadFiles(IEnumerable<MetaData> metaDatas, long batchId = 0, IProcessNotify processNotify = null, bool existReplace = false)
         {
-            IsIdle = false;
             foreach (var metaData in metaDatas)
             {
                 metaData.BatchId = batchId;

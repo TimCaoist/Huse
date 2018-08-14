@@ -4,7 +4,7 @@ namespace HuSe.Models
 {
     public class DefaultHuSeConfig : IHuSeConfig
     {
-        private const int maxProccer = 1;
+        private const int maxProccer = 5;
 
         private const string folderName = "temp";
 

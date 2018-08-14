@@ -12,7 +12,7 @@ namespace HuSe.Interface
 
         void Succeed(MetaData wrapperData);
 
-        void Error(MetaData wrapperData);
+        void Error(Exception exception, MetaData wrapperData);
 
         void Progress(MetaData userState, long bytesReceived, long totalBytesToReceive, int progressPercentage);
     }
