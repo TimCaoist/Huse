@@ -86,6 +86,11 @@ namespace HuSe
 
         public static void DownloadFile(MetaData metaData, IProcessNotify processNotify = null, bool existReplace = false)
         {
+            if (string.IsNullOrEmpty(metaData.LocalFileName))
+            {
+                metaData.LocalFileName = Config.GetDefaultFile(metaData.Url);
+            }
+
             metaData.ProcessNotify = processNotify;
             metaData.ReplaceExist = existReplace;
             datas.Add(metaData);

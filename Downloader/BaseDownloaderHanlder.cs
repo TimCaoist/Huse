@@ -128,10 +128,11 @@ namespace HuSe.Downloader
             {
                 try
                 {
-                    processNotify.Error(ex, metaData);
+                    processNotify?.Error(ex, metaData);
                 }
                 finally
                 {
+                    Finshed?.Invoke(this);
                 }
             }
         }
