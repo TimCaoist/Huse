@@ -28,6 +28,18 @@ namespace HuSe
             CustomerThread.Start();
         }
 
+        public static bool CheckUrlExist(string url)
+        {
+            var path = GetDefaultPath(url);
+            return File.Exists(path);
+        }
+
+        public static string GetDefaultPath(string url)
+        {
+            var path = Path.Combine(Config.LocalFolder, Config.GetDefaultFile(url));
+            return path;
+        }
+
         private static void Cusomer()
         {
             while (true)
@@ -118,20 +130,19 @@ namespace HuSe
 
         public static void DownloadFile(string url, long id, IProcessNotify processNotify)
         {
-            DownloadFile(url, url.GetHashCode().ToString(), id, processNotify, Config.ReplaceExist);
+            DownloadFile(url, string.Empty, id, processNotify, Config.ReplaceExist);
         }
         
         public static void DownloadFile(string url, long id = 0)
         {
-            DownloadFile(url, url.GetHashCode().ToString(), id, null, Config.ReplaceExist);
+            DownloadFile(url, string.Empty, id, null, Config.ReplaceExist);
         }
 
         public static void DownloadFiles(IEnumerable<string> urls, IProcessNotify processNotify = null, long batchId = 0)
         {
             var metaDatas = urls.Select(u => new MetaData
             {
-                Url = u,
-                LocalFileName = u.GetHashCode().ToString(),
+                Url = u
             }).ToArray();
 
             DownloadFiles(metaDatas, batchId, processNotify, Config.ReplaceExist);
@@ -141,6 +152,11 @@ namespace HuSe
         {
             foreach (var metaData in metaDatas)
             {
+                if (string.IsNullOrEmpty(metaData.LocalFileName))
+                {
+                    metaData.LocalFileName = Config.GetDefaultFile(metaData.Url);
+                }
+
                 metaData.BatchId = batchId;
                 metaData.ProcessNotify = processNotify;
                 metaData.ReplaceExist = existReplace;

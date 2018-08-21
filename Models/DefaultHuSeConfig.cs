@@ -8,24 +8,26 @@ namespace HuSe.Models
 
         private const string folderName = "temp";
 
-        private const int headBearSeconds = 10;
-
-        public int MaxProccer {
+        public virtual int MaxProccer {
             get
             {
                 return maxProccer;
             }
         }
 
-        public string LocalFolder
+        public virtual string LocalFolder
         {
             get
             {
                 return folderName;
             }
         }
-        public int IdleMaxClearTime => headBearSeconds;
 
         public bool ReplaceExist => false;
+
+        public virtual string GetDefaultFile(string url)
+        {
+            return url.GetHashCode().ToString();
+        }
     }
 }

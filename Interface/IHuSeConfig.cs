@@ -11,8 +11,8 @@ namespace HuSe.Interface
 
         string LocalFolder { get; }
 
-        int IdleMaxClearTime { get;  }
-
         bool ReplaceExist { get;  }
+
+        string GetDefaultFile(string url);
     }
 }
