@@ -116,25 +116,41 @@ namespace HuSe.Downloader
 
         private void DoWebDown(MetaData metaData, IProcessNotify processNotify, string loaclPath, string fullPath)
         {
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(metaData.Url);
-                request.BeginGetResponse(ar=> {
-                   var response = request.EndGetResponse(ar);
-                   EndResponse(response, metaData, processNotify, loaclPath, fullPath);
-                }, null);
+            HttpWebRequest request = null;
+            try {
+                request = (HttpWebRequest)WebRequest.Create(metaData.Url);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 try
                 {
                     processNotify?.Error(ex, metaData);
+                    return;
                 }
                 finally
                 {
                     Finshed?.Invoke(this);
                 }
             }
+
+            request.BeginGetResponse(ar => {
+                try
+                {
+                    var response = request.EndGetResponse(ar);
+                    EndResponse(response, metaData, processNotify, loaclPath, fullPath);
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        processNotify?.Error(ex, metaData);
+                    }
+                    finally
+                    {
+                        Finshed?.Invoke(this);
+                    }
+                }
+            }, null);
         }
 
         protected abstract void FinshedNotify(IProcessNotify processNotify);
