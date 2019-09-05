@@ -11,7 +11,7 @@ namespace HuSe
 {
     public static class WebClientUtil
     {
-        private static readonly ICollection<BaseDownloaderHanlder> Proccers = new List<BaseDownloaderHanlder>();
+        private static readonly ICollection<BaseDownloaderHanlder> Proccers = new List<BaseDownloaderHanlder>() ;
 
         private static readonly List<MetaData> datas = new List<MetaData>();
 
